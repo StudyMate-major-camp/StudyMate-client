@@ -5,6 +5,7 @@ const plansKey = (goalId?: string) =>
   goalId ? ['weekly-plans', 'goal', goalId] : ['weekly-plans']
 const planKey = (id: string) => ['weekly-plans', id] as const
 const progressKey = (id: string) => ['weekly-plans', id, 'progress'] as const
+const viewKey = (id: string) => ['weekly-plans', id, 'view'] as const
 
 export function useWeeklyPlans(goalId?: string) {
   return useQuery({
@@ -26,6 +27,32 @@ export function useWeeklyPlanProgress(id: string) {
     queryKey: progressKey(id),
     queryFn: () => weeklyPlansApi.getProgress(id),
     enabled: !!id,
+  })
+}
+
+// F-03: 화면 출력용 계획표(JSON) 조회
+export function useWeeklyPlanView(id: string) {
+  return useQuery({
+    queryKey: viewKey(id),
+    queryFn: () => weeklyPlansApi.getView(id),
+    enabled: !!id,
+  })
+}
+
+// F-03: 계획표 PDF 다운로드 (브라우저 저장까지 트리거)
+export function useDownloadPlanPdf() {
+  return useMutation({
+    mutationFn: async ({ id, weekStart }: { id: string; weekStart: string }) => {
+      const blob = await weeklyPlansApi.downloadPdf(id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `weekly-plan-${weekStart}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    },
   })
 }
 

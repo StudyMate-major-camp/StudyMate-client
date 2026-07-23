@@ -5,6 +5,7 @@ import GoalNewPage from './pages/goals/GoalNewPage'
 import GoalDetailPage from './pages/goals/GoalDetailPage'
 import LevelsPage from './pages/levels/LevelsPage'
 import PlanDetailPage from './pages/plans/PlanDetailPage'
+import PlanViewPage from './pages/plans/PlanViewPage'
 
 const queryClient = new QueryClient()
 
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/goals/:id" element={<GoalDetailPage />} />
           <Route path="/levels" element={<LevelsPage />} />
           <Route path="/plans/:id" element={<PlanDetailPage />} />
+          <Route path="/plans/:id/view" element={<PlanViewPage />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

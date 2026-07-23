@@ -57,3 +57,29 @@ export interface WeeklyPlanProgress {
   completed: number
   percentage: number
 }
+
+// F-03: 계획표 조회(/weekly-plans/:id/view) 응답. 서버가 camelCase로 내려준다.
+export interface PlanViewItem {
+  id: string
+  title: string
+  estimatedMinutes: number | null
+  completed: boolean
+  completedAt: string | null
+}
+
+export interface PlanViewDay {
+  date: string
+  dayOfWeek: number // 1=월 .. 7=일
+  weekday: string // '월' .. '일'
+  items: PlanViewItem[]
+  totalMinutes: number
+}
+
+export interface WeeklyPlanView {
+  id: string
+  goalId: string
+  weekStart: string
+  weekEnd: string
+  progress: { total: number; completed: number; percent: number }
+  days: PlanViewDay[]
+}
