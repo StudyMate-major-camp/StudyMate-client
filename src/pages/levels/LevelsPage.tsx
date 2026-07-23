@@ -116,6 +116,7 @@ export default function LevelsPage() {
   const isMutating = isUpserting || isDeleting
 
   const [selectedNewLevel, setSelectedNewLevel] = useState<Level>('MID')
+  const [mutateError, setMutateError] = useState('')
 
   const {
     register,
@@ -128,14 +129,20 @@ export default function LevelsPage() {
   })
 
   const handleLevelChange = (subject: string, level: Level) => {
+    setMutateError('')
     const updated = levels.map((l) =>
       l.subject === subject ? { subject: l.subject, level } : { subject: l.subject, level: l.level },
     )
-    upsert(updated)
+    upsert(updated, {
+      onError: () => setMutateError('수준 변경에 실패했습니다'),
+    })
   }
 
   const handleDelete = (subject: string) => {
-    remove(subject)
+    setMutateError('')
+    remove(subject, {
+      onError: () => setMutateError('삭제에 실패했습니다'),
+    })
   }
 
   const onAdd = (data: AddForm) => {
@@ -261,11 +268,11 @@ export default function LevelsPage() {
           </div>
         </form>
 
-        {/* 저장 상태 피드백 */}
         {isMutating && (
-          <p className="mt-4 text-center text-xs text-gray-400 animate-pulse">
-            저장 중...
-          </p>
+          <p className="mt-4 text-center text-xs text-gray-400 animate-pulse">저장 중...</p>
+        )}
+        {mutateError && (
+          <p className="mt-2 text-center text-xs text-rose-500">{mutateError}</p>
         )}
       </div>
     </div>

@@ -102,15 +102,23 @@ export default function GoalsPage() {
               목표 관리
             </h1>
           </div>
-          <Link
-            to="/goals/new"
-            className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 active:scale-[0.97] transition-all"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-            </svg>
-            새 목표
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/levels"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-gray-500 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 active:scale-[0.97] transition-all"
+            >
+              학습 수준
+            </Link>
+            <Link
+              to="/goals/new"
+              className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 active:scale-[0.97] transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+              새 목표
+            </Link>
+          </div>
         </header>
 
         {isLoading ? (

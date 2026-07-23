@@ -24,6 +24,7 @@ export default function GoalNewPage() {
   const { mutate: create, isPending } = useCreateGoal()
   const [availableTime, setAvailableTime] = useState<Partial<Record<Day, number>>>({})
   const [timeError, setTimeError] = useState('')
+  const [submitError, setSubmitError] = useState('')
 
   const {
     register,
@@ -37,9 +38,17 @@ export default function GoalNewPage() {
       return
     }
     setTimeError('')
+    setSubmitError('')
     create(
       { ...data, available_time: availableTime },
-      { onSuccess: (goal) => navigate(`/goals/${goal.id}`) },
+      {
+        onSuccess: (goal) => navigate(`/goals/${goal.id}`),
+        onError: (e: unknown) => {
+          const msg = (e as { response?: { data?: { message?: string } } })
+            ?.response?.data?.message
+          setSubmitError(msg ?? '목표 등록에 실패했습니다')
+        },
+      },
     )
   }
 
@@ -108,6 +117,10 @@ export default function GoalNewPage() {
             <AvailableTimeInput value={availableTime} onChange={setAvailableTime} />
             {timeError && <p className="mt-2 text-xs text-rose-500">{timeError}</p>}
           </div>
+
+          {submitError && (
+            <p className="text-xs text-rose-500 text-center">{submitError}</p>
+          )}
 
           <button
             type="submit"

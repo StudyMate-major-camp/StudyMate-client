@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useGoal, useGoalProgress, useUpdateGoal, useDeleteGoal } from '../../hooks/useGoals'
+import { useWeeklyPlans, useCreateWeeklyPlan } from '../../hooks/useWeeklyPlans'
 import type { Day } from '../../types'
 import AvailableTimeInput from '../../components/AvailableTimeInput'
 
@@ -33,9 +34,17 @@ export default function GoalDetailPage() {
   const { mutate: update, isPending: isUpdating } = useUpdateGoal(id!)
   const { mutate: remove, isPending: isDeleting } = useDeleteGoal()
 
+  const { data: weeklyPlans = [] } = useWeeklyPlans(id)
+  const { mutate: createPlan, isPending: isCreatingPlan } = useCreateWeeklyPlan(id!)
+
   const [isEditing, setIsEditing] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [availableTime, setAvailableTime] = useState<Partial<Record<Day, number>>>({})
+  const [showNewPlanForm, setShowNewPlanForm] = useState(false)
+  const [newWeekStart, setNewWeekStart] = useState('')
+  const [weekStartError, setWeekStartError] = useState('')
+  const [planCreateError, setPlanCreateError] = useState('')
+  const [saveError, setSaveError] = useState('')
 
   const {
     register,
@@ -61,9 +70,17 @@ export default function GoalDetailPage() {
   }
 
   const onSave = (data: EditForm) => {
+    setSaveError('')
     update(
       { ...data, available_time: availableTime },
-      { onSuccess: () => setIsEditing(false) },
+      {
+        onSuccess: () => setIsEditing(false),
+        onError: (e: unknown) => {
+          const msg = (e as { response?: { data?: { message?: string } } })
+            ?.response?.data?.message
+          setSaveError(msg ?? '수정에 실패했습니다')
+        },
+      },
     )
   }
 
@@ -172,6 +189,10 @@ export default function GoalDetailPage() {
               </div>
             </div>
 
+            {saveError && (
+              <p className="text-xs text-rose-500 text-center">{saveError}</p>
+            )}
+
             <div className="flex gap-3">
               <button
                 type="button"
@@ -279,14 +300,87 @@ export default function GoalDetailPage() {
               )}
             </div>
 
-            {/* 주간 계획 섹션 (F-02 연동 예정) */}
+            {/* 주간 계획 섹션 */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-xs p-5">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-4">
                 <p className="text-xs font-semibold text-gray-500">주간 계획</p>
+                <button
+                  type="button"
+                  onClick={() => setShowNewPlanForm((v) => !v)}
+                  className="text-xs font-semibold text-indigo-500 hover:text-indigo-700 transition cursor-pointer"
+                >
+                  {showNewPlanForm ? '취소' : '+ 새 계획'}
+                </button>
               </div>
-              <p className="text-sm text-gray-300 text-center py-4">
-                주간 계획은 F-02에서 연동됩니다.
-              </p>
+
+              {showNewPlanForm && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100 flex gap-2 items-end">
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-400 mb-1">주 시작일 (월요일)</label>
+                    <input
+                      type="date"
+                      value={newWeekStart}
+                      onChange={(e) => setNewWeekStart(e.target.value)}
+                      className="w-full px-2.5 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    />
+                    {weekStartError && (
+                      <p className="mt-1 text-xs text-rose-500">{weekStartError}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!newWeekStart || isCreatingPlan}
+                    onClick={() => {
+                      // 월요일 여부 검증 (getDay() === 1)
+                      const day = new Date(newWeekStart + 'T12:00:00').getDay()
+                      if (day !== 1) {
+                        setWeekStartError('월요일 날짜를 선택하세요')
+                        return
+                      }
+                      setWeekStartError('')
+                      setPlanCreateError('')
+                      createPlan(
+                        { goal_id: id!, week_start_date: newWeekStart },
+                        {
+                          onSuccess: () => { setShowNewPlanForm(false); setNewWeekStart('') },
+                          onError: (e: unknown) => {
+                            const msg = (e as { response?: { data?: { message?: string } } })
+                              ?.response?.data?.message
+                            setPlanCreateError(msg ?? '주간 계획 생성에 실패했습니다')
+                          },
+                        },
+                      )
+                    }}
+                    className="px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold disabled:opacity-40 hover:bg-gray-700 transition cursor-pointer"
+                  >
+                    생성
+                  </button>
+                </div>
+              )}
+
+              {planCreateError && (
+                <p className="mb-3 text-xs text-rose-500">{planCreateError}</p>
+              )}
+
+              {weeklyPlans.length === 0 ? (
+                <p className="text-sm text-gray-300 text-center py-4">주간 계획이 없습니다.</p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {weeklyPlans.map((plan) => (
+                    <li key={plan.id}>
+                      <Link
+                        to={`/plans/${plan.id}`}
+                        className="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition"
+                      >
+                        <span className="text-sm text-gray-700">{plan.week_start_date} 주</span>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-gray-300">
+                          <path d="M5 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         )}
