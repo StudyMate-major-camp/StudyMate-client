@@ -1,5 +1,26 @@
 export type Day = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN'
 export type Level = 'HIGH' | 'MID' | 'LOW'
+export type Grade = '고1' | '고2' | '고3'
+
+// F-07/F-12: 인증 및 마이페이지. profiles 테이블(name/school/grade)과 auth.users를 합친 형태.
+export interface UserProfile {
+  id: string
+  email: string
+  name: string
+  school?: string
+  grade?: Grade
+}
+
+// 로그인/토큰갱신 응답의 토큰 묶음. Supabase 세션 토큰이 그대로 내려온다.
+export interface AuthTokens {
+  access_token: string
+  refresh_token: string
+  expires_in: number
+}
+
+export interface LoginResult extends AuthTokens {
+  user: UserProfile
+}
 
 export interface Goal {
   id: string
