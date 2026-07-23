@@ -6,14 +6,13 @@ export const api = axios.create({
 })
 
 // 요청마다 인증 헤더 주입
-// dev: x-user-id 헤더 (백엔드 stub 인증)
-// F-07 완료 후: Authorization: Bearer <jwt> 로 교체
+// F-07 완료로 백엔드 requireAuth 가 실제 JWT 검증으로 전환됨 → Authorization: Bearer <jwt>
 api.interceptors.request.use(async (config) => {
   const { data } = await supabase.auth.getSession()
-  const userId = data.session?.user.id
+  const token = data.session?.access_token
 
-  if (userId) {
-    config.headers['x-user-id'] = userId
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`
   }
 
   return config
