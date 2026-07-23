@@ -104,6 +104,16 @@ export default function GoalsPage() {
           </div>
           <div className="flex items-center gap-2">
             <Link
+              to="/me"
+              aria-label="마이페이지"
+              className="flex items-center justify-center w-9 h-9 text-gray-500 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 active:scale-[0.97] transition-all"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </Link>
+            <Link
               to="/levels"
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-gray-500 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 active:scale-[0.97] transition-all"
             >
