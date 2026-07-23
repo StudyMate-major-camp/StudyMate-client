@@ -48,6 +48,10 @@ export interface PlanItem {
   updated_at: string
 }
 
+export interface WeeklyPlanDetail extends WeeklyPlan {
+  plan_items: PlanItem[]
+}
+
 export interface WeeklyPlanProgress {
   total: number
   completed: number
