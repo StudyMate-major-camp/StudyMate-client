@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+:root {
+  --font-serif: 'Noto Serif KR', Georgia, serif;
+  --font-sans: 'Noto Sans KR', system-ui, sans-serif;
+}
+
+* {
+  font-family: var(--font-sans);
+}
