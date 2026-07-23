@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { goalsApi } from '../api/goals'
-import type { Day, Level } from '../types'
 
 const GOALS_KEY = ['goals'] as const
 const goalKey = (id: string) => ['goals', id] as const
