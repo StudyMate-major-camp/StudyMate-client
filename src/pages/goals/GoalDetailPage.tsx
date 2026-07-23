@@ -42,6 +42,9 @@ export default function GoalDetailPage() {
   const [availableTime, setAvailableTime] = useState<Partial<Record<Day, number>>>({})
   const [showNewPlanForm, setShowNewPlanForm] = useState(false)
   const [newWeekStart, setNewWeekStart] = useState('')
+  const [weekStartError, setWeekStartError] = useState('')
+  const [planCreateError, setPlanCreateError] = useState('')
+  const [saveError, setSaveError] = useState('')
 
   const {
     register,
@@ -67,9 +70,17 @@ export default function GoalDetailPage() {
   }
 
   const onSave = (data: EditForm) => {
+    setSaveError('')
     update(
       { ...data, available_time: availableTime },
-      { onSuccess: () => setIsEditing(false) },
+      {
+        onSuccess: () => setIsEditing(false),
+        onError: (e: unknown) => {
+          const msg = (e as { response?: { data?: { message?: string } } })
+            ?.response?.data?.message
+          setSaveError(msg ?? '수정에 실패했습니다')
+        },
+      },
     )
   }
 
@@ -177,6 +188,10 @@ export default function GoalDetailPage() {
                 <AvailableTimeInput value={availableTime} onChange={setAvailableTime} />
               </div>
             </div>
+
+            {saveError && (
+              <p className="text-xs text-rose-500 text-center">{saveError}</p>
+            )}
 
             <div className="flex gap-3">
               <button
@@ -308,14 +323,32 @@ export default function GoalDetailPage() {
                       onChange={(e) => setNewWeekStart(e.target.value)}
                       className="w-full px-2.5 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
                     />
+                    {weekStartError && (
+                      <p className="mt-1 text-xs text-rose-500">{weekStartError}</p>
+                    )}
                   </div>
                   <button
                     type="button"
                     disabled={!newWeekStart || isCreatingPlan}
                     onClick={() => {
+                      // 월요일 여부 검증 (getDay() === 1)
+                      const day = new Date(newWeekStart + 'T12:00:00').getDay()
+                      if (day !== 1) {
+                        setWeekStartError('월요일 날짜를 선택하세요')
+                        return
+                      }
+                      setWeekStartError('')
+                      setPlanCreateError('')
                       createPlan(
                         { goal_id: id!, week_start_date: newWeekStart },
-                        { onSuccess: () => { setShowNewPlanForm(false); setNewWeekStart('') } },
+                        {
+                          onSuccess: () => { setShowNewPlanForm(false); setNewWeekStart('') },
+                          onError: (e: unknown) => {
+                            const msg = (e as { response?: { data?: { message?: string } } })
+                              ?.response?.data?.message
+                            setPlanCreateError(msg ?? '주간 계획 생성에 실패했습니다')
+                          },
+                        },
                       )
                     }}
                     className="px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold disabled:opacity-40 hover:bg-gray-700 transition cursor-pointer"
@@ -323,6 +356,10 @@ export default function GoalDetailPage() {
                     생성
                   </button>
                 </div>
+              )}
+
+              {planCreateError && (
+                <p className="mb-3 text-xs text-rose-500">{planCreateError}</p>
               )}
 
               {weeklyPlans.length === 0 ? (
