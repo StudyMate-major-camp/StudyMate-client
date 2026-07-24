@@ -1,5 +1,5 @@
 import { api } from '../lib/api'
-import type { Goal, GoalProgress } from '../types'
+import type { Goal, GoalProgress, WeeklyPlanDetail } from '../types'
 
 export const goalsApi = {
   list: () => api.get<Goal[]>('/goals').then((r) => r.data),
@@ -27,4 +27,8 @@ export const goalsApi = {
   ) => api.patch<Goal>(`/goals/${id}`, body).then((r) => r.data),
 
   remove: (id: string) => api.delete(`/goals/${id}`),
+
+  // F-04: AI 학습 계획 생성. 지정한 주(월요일 시작)에 대해 weekly_plan+items 를 만들어 반환.
+  generatePlan: (id: string, body: { week_start_date: string }) =>
+    api.post<WeeklyPlanDetail>(`/goals/${id}/generate-plan`, body).then((r) => r.data),
 }
