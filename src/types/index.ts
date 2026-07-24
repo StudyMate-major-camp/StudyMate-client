@@ -104,3 +104,20 @@ export interface WeeklyPlanView {
   progress: { total: number; completed: number; percent: number }
   days: PlanViewDay[]
 }
+
+// F-05: AI 진도 분석 응답. completionRate 는 서버에서 계산한 0~1 값.
+export interface ProgressAnalysis {
+  completionRate: number
+  status: '지연' | '정상' | '초과달성'
+  delayedTasks: { date: string; task: string; reasonHint: string | null }[]
+  analysis: string
+  nextPlanAdjustment: string
+}
+
+// F-06: AI 회고 요약 응답.
+export interface RetrospectiveSummary {
+  summary: string
+  achievements: string[]
+  improvements: string[]
+  nextWeekSuggestion: string
+}

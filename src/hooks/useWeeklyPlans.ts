@@ -98,3 +98,18 @@ export function useDeletePlanItem(planId: string) {
     },
   })
 }
+
+// F-05: AI 진도 분석. 버튼으로 필요할 때만 호출(LLM 비용)하므로 mutation 으로 다룬다.
+export function useWeeklyPlanAnalysis(id: string) {
+  return useMutation({
+    mutationFn: () => weeklyPlansApi.getAnalysis(id),
+  })
+}
+
+// F-06: AI 회고 요약. 회고 텍스트를 받아 요약 결과를 반환.
+export function useRetrospectiveSummary(id: string) {
+  return useMutation({
+    mutationFn: (retrospectiveText: string) =>
+      weeklyPlansApi.createRetrospective(id, { retrospective_text: retrospectiveText }),
+  })
+}

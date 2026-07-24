@@ -5,6 +5,8 @@ import type {
   PlanItem,
   WeeklyPlanProgress,
   WeeklyPlanView,
+  ProgressAnalysis,
+  RetrospectiveSummary,
 } from '../types'
 
 export const weeklyPlansApi = {
@@ -36,6 +38,16 @@ export const weeklyPlansApi = {
     planId: string,
     body: { title: string; scheduled_date: string; estimated_minutes?: number },
   ) => api.post<PlanItem>(`/weekly-plans/${planId}/items`, body).then((r) => r.data),
+
+  // F-05: AI 진도 분석 (비저장, 요청 시마다 LLM 호출)
+  getAnalysis: (id: string) =>
+    api.get<ProgressAnalysis>(`/weekly-plans/${id}/analysis`).then((r) => r.data),
+
+  // F-06: AI 회고 요약 (비저장)
+  createRetrospective: (id: string, body: { retrospective_text: string }) =>
+    api
+      .post<RetrospectiveSummary>(`/weekly-plans/${id}/retrospective`, body)
+      .then((r) => r.data),
 }
 
 export const planItemsApi = {

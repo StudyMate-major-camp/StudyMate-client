@@ -55,3 +55,16 @@ export function useDeleteGoal() {
     onSuccess: () => qc.invalidateQueries({ queryKey: GOALS_KEY }),
   })
 }
+
+// F-04: AI 학습 계획 생성. 성공 시 해당 목표의 주간 계획 목록을 무효화한다.
+export function useGenerateStudyPlan(goalId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: { week_start_date: string }) =>
+      goalsApi.generatePlan(goalId, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['weekly-plans', 'goal', goalId] })
+      qc.invalidateQueries({ queryKey: progressKey(goalId) })
+    },
+  })
+}

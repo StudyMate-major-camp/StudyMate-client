@@ -9,8 +9,18 @@ import {
   useCreatePlanItem,
   useSetPlanItemCompletion,
   useDeletePlanItem,
+  useWeeklyPlanAnalysis,
+  useRetrospectiveSummary,
 } from '../../hooks/useWeeklyPlans'
 import type { PlanItem } from '../../types'
+
+// axios 에러에서 서버 메시지({ error: { details } })를 추출한다.
+function errMsg(e: unknown, fallback: string) {
+  return (
+    (e as { response?: { data?: { error?: { details?: string } } } })?.response?.data
+      ?.error?.details ?? fallback
+  )
+}
 
 const itemSchema = z.object({
   title: z.string().min(1, '항목명을 입력하세요').max(200),
@@ -102,8 +112,25 @@ export default function PlanDetailPage() {
   const { data: progress } = useWeeklyPlanProgress(id!)
   const { mutate: createItem, isPending: isCreating } = useCreatePlanItem(id!)
 
+  // F-05 진도 분석
+  const {
+    mutate: runAnalysis,
+    data: analysis,
+    isPending: isAnalyzing,
+    error: analysisError,
+  } = useWeeklyPlanAnalysis(id!)
+
+  // F-06 회고 요약
+  const {
+    mutate: summarize,
+    data: retroSummary,
+    isPending: isSummarizing,
+    error: retroError,
+  } = useRetrospectiveSummary(id!)
+
   const [showForm, setShowForm] = useState(false)
   const [estimatedMinutes, setEstimatedMinutes] = useState('')
+  const [retroText, setRetroText] = useState('')
 
   const {
     register,
@@ -299,6 +326,135 @@ export default function PlanDetailPage() {
                 {isCreating ? '추가 중...' : '항목 추가'}
               </button>
             </form>
+          )}
+        </div>
+
+        {/* F-05: AI 진도 분석 */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-xs p-5 mt-5">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-semibold text-gray-700">✨ AI 진도 분석</p>
+            <button
+              type="button"
+              disabled={isAnalyzing || sortedDates.length === 0}
+              onClick={() => runAnalysis()}
+              className="px-3 py-1.5 rounded-lg bg-indigo-500 text-white text-xs font-semibold hover:bg-indigo-600 disabled:opacity-40 transition cursor-pointer"
+            >
+              {isAnalyzing ? '분석 중...' : analysis ? '다시 분석' : '분석하기'}
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mb-3">이번 주 계획과 완료 현황을 바탕으로 지연/조정안을 제안합니다.</p>
+
+          {sortedDates.length === 0 && (
+            <p className="text-xs text-gray-300">계획 항목이 있어야 분석할 수 있습니다.</p>
+          )}
+          {analysisError && (
+            <p className="text-xs text-rose-500">{errMsg(analysisError, 'AI 분석에 실패했습니다')}</p>
+          )}
+
+          {analysis && (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span
+                  className={[
+                    'text-xs font-semibold px-2.5 py-1 rounded-lg',
+                    analysis.status === '지연'
+                      ? 'bg-rose-50 text-rose-500'
+                      : analysis.status === '초과달성'
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : 'bg-indigo-50 text-indigo-500',
+                  ].join(' ')}
+                >
+                  {analysis.status}
+                </span>
+                <span className="text-xs text-gray-400">
+                  완료율 {Math.round(analysis.completionRate * 100)}%
+                </span>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 mb-1">분석</p>
+                <p className="text-sm text-gray-700 whitespace-pre-line">{analysis.analysis}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 mb-1">다음 주 조정안</p>
+                <p className="text-sm text-gray-700 whitespace-pre-line">{analysis.nextPlanAdjustment}</p>
+              </div>
+              {analysis.delayedTasks.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 mb-1.5">지연 항목</p>
+                  <ul className="flex flex-col gap-1">
+                    {analysis.delayedTasks.map((t, i) => (
+                      <li key={i} className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                        <span className="text-gray-400">{t.date}</span> · {t.task}
+                        {t.reasonHint && <span className="text-gray-400"> — {t.reasonHint}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* F-06: AI 회고 요약 */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-xs p-5 mt-5">
+          <p className="text-sm font-semibold text-gray-700 mb-1">✨ AI 회고 요약</p>
+          <p className="text-xs text-gray-400 mb-3">이번 주 회고를 자유롭게 작성하면 핵심과 개선점을 요약해 드립니다.</p>
+
+          <textarea
+            value={retroText}
+            onChange={(e) => setRetroText(e.target.value)}
+            rows={4}
+            placeholder="이번 주 학습은 어땠나요? 잘된 점, 아쉬운 점을 자유롭게 적어보세요."
+            className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:bg-white transition resize-none"
+          />
+          <button
+            type="button"
+            disabled={isSummarizing || retroText.trim().length === 0}
+            onClick={() => summarize(retroText.trim())}
+            className="w-full mt-2.5 py-2.5 rounded-lg bg-indigo-500 text-white text-sm font-semibold hover:bg-indigo-600 disabled:opacity-40 transition cursor-pointer"
+          >
+            {isSummarizing ? '요약 중...' : '회고 요약하기'}
+          </button>
+
+          {retroError && (
+            <p className="mt-2 text-xs text-rose-500">{errMsg(retroError, 'AI 요약에 실패했습니다')}</p>
+          )}
+
+          {retroSummary && (
+            <div className="flex flex-col gap-3 mt-4">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 mb-1">요약</p>
+                <p className="text-sm text-gray-700 whitespace-pre-line">{retroSummary.summary}</p>
+              </div>
+              {retroSummary.achievements.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 mb-1.5">잘한 점</p>
+                  <ul className="flex flex-col gap-1">
+                    {retroSummary.achievements.map((a, i) => (
+                      <li key={i} className="text-sm text-gray-700 flex gap-1.5">
+                        <span className="text-emerald-400">•</span> {a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {retroSummary.improvements.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 mb-1.5">개선할 점</p>
+                  <ul className="flex flex-col gap-1">
+                    {retroSummary.improvements.map((a, i) => (
+                      <li key={i} className="text-sm text-gray-700 flex gap-1.5">
+                        <span className="text-rose-300">•</span> {a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 mb-1">다음 주 제안</p>
+                <p className="text-sm text-gray-700 whitespace-pre-line">{retroSummary.nextWeekSuggestion}</p>
+              </div>
+            </div>
           )}
         </div>
       </div>
