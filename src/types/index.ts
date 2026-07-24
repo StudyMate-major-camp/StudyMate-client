@@ -36,7 +36,7 @@ export interface Goal {
 export interface GoalProgress {
   total: number
   completed: number
-  percentage: number
+  percent: number
 }
 
 export interface UserLevel {
@@ -76,7 +76,7 @@ export interface WeeklyPlanDetail extends WeeklyPlan {
 export interface WeeklyPlanProgress {
   total: number
   completed: number
-  percentage: number
+  percent: number
 }
 
 // F-03: 계획표 조회(/weekly-plans/:id/view) 응답. 서버가 camelCase로 내려준다.
