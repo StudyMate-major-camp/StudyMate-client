@@ -3,7 +3,13 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useGoal, useGoalProgress, useUpdateGoal, useDeleteGoal } from '../../hooks/useGoals'
+import {
+  useGoal,
+  useGoalProgress,
+  useUpdateGoal,
+  useDeleteGoal,
+  useGenerateStudyPlan,
+} from '../../hooks/useGoals'
 import { useWeeklyPlans, useCreateWeeklyPlan } from '../../hooks/useWeeklyPlans'
 import type { Day } from '../../types'
 import AvailableTimeInput from '../../components/AvailableTimeInput'
@@ -13,6 +19,9 @@ const DAY_KO: Record<string, string> = {
 }
 
 const today = new Date().toISOString().slice(0, 10)
+
+// week_start_date 는 월요일(getDay()===1)이어야 한다 (서버 검증과 동일).
+const isMonday = (date: string) => new Date(date + 'T12:00:00').getDay() === 1
 
 const editSchema = z.object({
   subject: z.string().min(1, '과목명을 입력하세요').max(100),
@@ -36,6 +45,7 @@ export default function GoalDetailPage() {
 
   const { data: weeklyPlans = [] } = useWeeklyPlans(id)
   const { mutate: createPlan, isPending: isCreatingPlan } = useCreateWeeklyPlan(id!)
+  const { mutate: generatePlan, isPending: isGeneratingPlan } = useGenerateStudyPlan(id!)
 
   const [isEditing, setIsEditing] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -314,8 +324,8 @@ export default function GoalDetailPage() {
               </div>
 
               {showNewPlanForm && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100 flex gap-2 items-end">
-                  <div className="flex-1">
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100 flex flex-col gap-2.5">
+                  <div>
                     <label className="block text-xs text-gray-400 mb-1">주 시작일 (월요일)</label>
                     <input
                       type="date"
@@ -327,34 +337,60 @@ export default function GoalDetailPage() {
                       <p className="mt-1 text-xs text-rose-500">{weekStartError}</p>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    disabled={!newWeekStart || isCreatingPlan}
-                    onClick={() => {
-                      // 월요일 여부 검증 (getDay() === 1)
-                      const day = new Date(newWeekStart + 'T12:00:00').getDay()
-                      if (day !== 1) {
-                        setWeekStartError('월요일 날짜를 선택하세요')
-                        return
-                      }
-                      setWeekStartError('')
-                      setPlanCreateError('')
-                      createPlan(
-                        { goal_id: id!, week_start_date: newWeekStart },
-                        {
-                          onSuccess: () => { setShowNewPlanForm(false); setNewWeekStart('') },
-                          onError: (e: unknown) => {
-                            const msg = (e as { response?: { data?: { message?: string } } })
-                              ?.response?.data?.message
-                            setPlanCreateError(msg ?? '주간 계획 생성에 실패했습니다')
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={!newWeekStart || isCreatingPlan || isGeneratingPlan}
+                      onClick={() => {
+                        if (!isMonday(newWeekStart)) {
+                          setWeekStartError('월요일 날짜를 선택하세요')
+                          return
+                        }
+                        setWeekStartError('')
+                        setPlanCreateError('')
+                        createPlan(
+                          { goal_id: id!, week_start_date: newWeekStart },
+                          {
+                            onSuccess: () => { setShowNewPlanForm(false); setNewWeekStart('') },
+                            onError: (e: unknown) => {
+                              const msg = (e as { response?: { data?: { message?: string } } })
+                                ?.response?.data?.message
+                              setPlanCreateError(msg ?? '주간 계획 생성에 실패했습니다')
+                            },
                           },
-                        },
-                      )
-                    }}
-                    className="px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold disabled:opacity-40 hover:bg-gray-700 transition cursor-pointer"
-                  >
-                    생성
-                  </button>
+                        )
+                      }}
+                      className="flex-1 px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 text-xs font-semibold disabled:opacity-40 hover:bg-gray-50 transition cursor-pointer"
+                    >
+                      빈 계획 생성
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!newWeekStart || isCreatingPlan || isGeneratingPlan}
+                      onClick={() => {
+                        if (!isMonday(newWeekStart)) {
+                          setWeekStartError('월요일 날짜를 선택하세요')
+                          return
+                        }
+                        setWeekStartError('')
+                        setPlanCreateError('')
+                        generatePlan(
+                          { week_start_date: newWeekStart },
+                          {
+                            onSuccess: (plan) => navigate(`/plans/${plan.id}`),
+                            onError: (e: unknown) => {
+                              const msg = (e as { response?: { data?: { error?: { details?: string } } } })
+                                ?.response?.data?.error?.details
+                              setPlanCreateError(msg ?? 'AI 계획 생성에 실패했습니다')
+                            },
+                          },
+                        )
+                      }}
+                      className="flex-1 px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold disabled:opacity-40 hover:bg-gray-700 transition cursor-pointer inline-flex items-center justify-center gap-1"
+                    >
+                      {isGeneratingPlan ? 'AI 생성 중...' : '✨ AI로 생성'}
+                    </button>
+                  </div>
                 </div>
               )}
 
