@@ -177,9 +177,20 @@ export default function PlanDetailPage() {
             목표로 돌아가기
           </Link>
           <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-2">F-02</p>
-          <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
-            {plan.week_start_date} 주
-          </h1>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
+              {plan.week_start_date} 주
+            </h1>
+            <Link
+              to={`/plans/${plan.id}/view`}
+              className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-gray-200 text-xs font-semibold text-gray-600 hover:border-gray-300 hover:text-gray-800 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 2.5h10v9H2zM2 5h10M5 5v6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              계획표 · PDF
+            </Link>
+          </div>
         </header>
 
         {/* 진행률 */}
