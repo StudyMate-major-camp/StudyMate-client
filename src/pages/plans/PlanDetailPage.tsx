@@ -174,7 +174,7 @@ export default function PlanDetailPage() {
     )
   }
 
-  const pct = progress?.percentage ?? 0
+  const pct = progress?.percent ?? 0
 
   // 날짜별로 항목 그룹핑
   const itemsByDate = (plan.plan_items ?? []).reduce<Record<string, PlanItem[]>>(

@@ -14,7 +14,7 @@ function daysLeft(targetDate: string) {
 // ─── 진행률 바 (개별 fetch) ────────────────────────────────────────────────────
 function GoalProgressBar({ goalId }: { goalId: string }) {
   const { data } = useGoalProgress(goalId)
-  const pct = data?.percentage ?? 0
+  const pct = data?.percent ?? 0
 
   return (
     <div className="mt-3">

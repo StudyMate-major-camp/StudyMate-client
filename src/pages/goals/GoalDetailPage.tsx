@@ -119,7 +119,7 @@ export default function GoalDetailPage() {
     )
   }
 
-  const pct = progress?.percentage ?? 0
+  const pct = progress?.percent ?? 0
   const activeDays = Object.entries(goal.available_time)
     .filter(([, mins]) => mins && (mins as number) > 0)
     .map(([day]) => DAY_KO[day] ?? day)
